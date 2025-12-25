@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Christmas Mission from Dad 🎄</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Welcome Screen -->
+        <div id="screen-welcome" class="screen active">
+            <div class="welcome-content">
+                <div class="snowflakes" aria-hidden="true">
+                    <div class="snowflake">❄</div>
+                    <div class="snowflake">❅</div>
+                    <div class="snowflake">❆</div>
+                    <div class="snowflake">❄</div>
+                    <div class="snowflake">❅</div>
+                </div>
+                <h1>🎄 A Christmas Mission</h1>
+                <h2>For Asher</h2>
+                <p class="welcome-text">Hey champ! Dad has a special challenge for you.<br>Complete the missions to reveal a surprise picture!</p>
+                <button id="btn-start" class="btn btn-primary btn-large">
+                    Start Your Mission! 🚀
+                </button>
+                <p class="welcome-note">From Dad, with love ❤️</p>
+            </div>
+        </div>
+
+        <!-- Photo Upload Screen (for parent setup) -->
+        <div id="screen-setup" class="screen">
+            <div class="setup-content">
+                <h2>📸 Setup Your Mission</h2>
+                <p>Upload the photo that Asher will reveal:</p>
+                <div class="upload-area" id="upload-area">
+                    <input type="file" id="photo-input" accept="image/*" hidden>
+                    <div class="upload-placeholder">
+                        <span class="upload-icon">📷</span>
+                        <span>Tap to upload photo</span>
+                    </div>
+                    <img id="photo-preview" class="photo-preview" hidden>
+                </div>
+                <button id="btn-confirm-photo" class="btn btn-primary" disabled>
+                    Confirm Photo ✓
+                </button>
+            </div>
+        </div>
+
+        <!-- Mission Hub Screen -->
+        <div id="screen-hub" class="screen">
+            <div class="hub-header">
+                <h2>🎯 Mission Hub</h2>
+                <p class="progress-text">Pieces Unlocked: <span id="pieces-count">0</span>/9</p>
+            </div>
+            
+            <!-- Puzzle Grid -->
+            <div class="puzzle-container">
+                <div id="puzzle-grid" class="puzzle-grid">
+                    <!-- 9 pieces will be generated here -->
+                </div>
+                <img id="puzzle-image" class="puzzle-image" hidden>
+            </div>
+
+            <!-- Mission Cards -->
+            <div class="missions-container">
+                <h3>Choose Your Next Mission</h3>
+                <div id="missions-list" class="missions-list">
+                    <!-- Mission cards will be generated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="screen-game" class="screen">
+            <div class="game-header">
+                <button id="btn-back" class="btn btn-small btn-secondary">← Back</button>
+                <h3 id="game-title">Mission</h3>
+                <div id="game-timer" class="game-timer" hidden>00:00</div>
+            </div>
+            <div id="game-area" class="game-area">
+                <!-- Game content loads here -->
+            </div>
+            <div id="game-instructions" class="game-instructions"></div>
+        </div>
+
+        <!-- Mission Complete Screen -->
+        <div id="screen-complete" class="screen">
+            <div class="complete-content">
+                <div class="celebration">🎉</div>
+                <h2>Mission Complete!</h2>
+                <div class="piece-reveal">
+                    <p>You unlocked piece #<span id="piece-number">1</span>!</p>
+                    <div id="revealed-piece" class="revealed-piece"></div>
+                </div>
+                <div class="dad-message">
+                    <p class="message-label">💬 Message from Dad:</p>
+                    <p id="dad-message-text" class="message-text"></p>
+                </div>
+                <button id="btn-continue" class="btn btn-primary btn-large">
+                    Continue →
+                </button>
+            </div>
+        </div>
+
+        <!-- Final Reveal Screen -->
+        <div id="screen-final" class="screen">
+            <div class="final-content">
+                <div class="confetti" id="confetti"></div>
+                <h1>🏆 You Did It, Asher! 🏆</h1>
+                <div class="final-image-container">
+                    <img id="final-image" class="final-image" alt="Your revealed picture">
+                </div>
+                <div class="final-message">
+                    <p id="final-message-text" class="message-text"></p>
+                </div>
+                <p class="final-signature">Merry Christmas! 🎄<br>Love, Dad ❤️</p>
+            </div>
+        </div>
+
+        <!-- Prize Vault Screen -->
+        <div id="screen-prizes" class="screen">
+            <div class="prizes-content">
+                <h2>🎁 Prize Vault Unlocked!</h2>
+                <p>You've earned the right to pick your prizes!</p>
+                <div id="prizes-list" class="prizes-list">
+                    <!-- Prize items will be generated -->
+                </div>
+                <p class="picks-remaining">Picks remaining: <span id="picks-count">0</span></p>
+                <button id="btn-confirm-prizes" class="btn btn-primary" disabled>
+                    Confirm My Picks! 🎉
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/games/tap-targets.js"></script>
+    <script src="js/games/memory-sequence.js"></script>
+    <script src="js/games/reaction-game.js"></script>
+    <script src="js/games/sliding-puzzle.js"></script>
+    <script src="js/games/spot-difference.js"></script>
+    <script src="js/games/speed-tap.js"></script>
+    <script src="js/games/trace-shape.js"></script>
+    <script src="js/games/quick-math.js"></script>
+    <script src="js/games/dodge-game.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
