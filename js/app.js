@@ -21,25 +21,44 @@ document.addEventListener('DOMContentLoaded', init);
 function init() {
     setupEventListeners();
     
-    // Check if we have a saved photo
-    if (state.setupComplete && state.photoData) {
-        showScreen('hub');
-        renderPuzzleGrid();
-        renderMissions();
-    } else {
-        showScreen('welcome');
-    }
+    // Skip setup - use the embedded image directly
+    state.photoData = 'asher_generated.png'; // Use the provided image
+    state.setupComplete = true;
+    
+    // Start on welcome screen
+    showScreen('welcome');
 }
 
 function setupEventListeners() {
-    // Welcome screen
-    document.getElementById('btn-start').addEventListener('click', () => {
-        if (state.setupComplete && state.photoData) {
-            showScreen('hub');
-            renderPuzzleGrid();
-            renderMissions();
-        } else {
-            showScreen('setup');
+    // Welcome screen - generate puzzle and go to hub
+    const startBtn = document.getElementById('btn-start');
+    
+    if (startBtn) {
+        startBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Reset the game state for a fresh start
+            state = resetState();
+            state.photoData = 'asher_generated.png';
+            state.setupComplete = true;
+            saveState(state);
+            
+            // Generate puzzle pieces first (this will show the preview)
+            generatePuzzlePieces();
+            
+            // Show hub after a brief delay to ensure puzzle generation completes
+            setTimeout(() => {
+                showScreen('hub');
+                renderPuzzleGrid();
+                renderMissions();
+            }, 100);
+        });
+    }
+    
+    // Reset button
+    document.getElementById('btn-reset').addEventListener('click', () => {
+        if (confirm('Are you sure you want to reset the entire game? This will delete all progress.')) {
+            resetGame();
         }
     });
     
@@ -69,24 +88,31 @@ function setupEventListeners() {
     
     // Complete screen
     document.getElementById('btn-continue').addEventListener('click', () => {
-        // Check if all pieces unlocked
-        if (state.unlockedPieces.length >= CONFIG.totalPieces) {
-            showScreen('final');
-            showFinalReveal();
-        } else {
-            showScreen('hub');
-            renderPuzzleGrid();
-            renderMissions();
-        }
+        // Always return to hub after mission completion
+        // Player must manually place all pieces to reach final screen
+        showScreen('hub');
+        renderPuzzleGrid();
+        renderPiecesBank();
+        renderMissions();
     });
     
     // Prizes screen
-    document.getElementById('btn-confirm-prizes').addEventListener('click', confirmPrizes);
+    const confirmBtn = document.getElementById('btn-confirm-prizes');
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', function() {
+            confirmPrizes();
+        });
+    }
 }
 
 function showScreen(screenName) {
-    Object.values(screens).forEach(screen => screen.classList.remove('active'));
-    screens[screenName].classList.add('active');
+    Object.values(screens).forEach(screen => {
+        if (screen) screen.classList.remove('active');
+    });
+    
+    if (screens[screenName]) {
+        screens[screenName].classList.add('active');
+    }
 }
 
 // Photo handling
@@ -128,12 +154,64 @@ function handlePhotoUpload(e) {
     reader.readAsDataURL(file);
 }
 
+function showImagePreview(img) {
+    const previewOverlay = document.createElement('div');
+    previewOverlay.style.cssText = 
+        'position: fixed; top: 0; left: 0; width: 100%; height: 100%; ' +
+        'background: rgba(0,0,0,0.9); display: flex; flex-direction: column; ' +
+        'justify-content: center; align-items: center; z-index: 10000; ' +
+        'color: white; text-align: center;';
+    
+    const previewImg = document.createElement('img');
+    previewImg.src = img.src;
+    previewImg.style.cssText = 
+        'max-width: 80%; max-height: 60%; border: 3px solid gold; ' +
+        'border-radius: 10px; box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);';
+    
+    const previewText = document.createElement('div');
+    previewText.innerHTML = 
+        '<h2 style="margin-bottom: 10px;">🎯 Your Mission Preview</h2>' +
+        '<p style="margin-bottom: 5px;">This is what you\'re building piece by piece!</p>' +
+        '<p style="font-size: 14px; opacity: 0.8;">Take a good look... this preview disappears in <span id="countdown">4</span> seconds</p>';
+    
+    previewOverlay.appendChild(previewText);
+    previewOverlay.appendChild(previewImg);
+    document.body.appendChild(previewOverlay);
+    
+    // Countdown and fade out
+    let seconds = 4;
+    const countdown = setInterval(() => {
+        seconds--;
+        const countdownEl = document.getElementById('countdown');
+        if (countdownEl) countdownEl.textContent = seconds;
+        
+        if (seconds <= 0) {
+            clearInterval(countdown);
+            previewOverlay.style.transition = 'opacity 1s';
+            previewOverlay.style.opacity = '0';
+            setTimeout(() => {
+                if (document.body.contains(previewOverlay)) {
+                    document.body.removeChild(previewOverlay);
+                }
+            }, 1000);
+        }
+    }, 1000);
+}
+
 function generatePuzzlePieces() {
     if (!state.photoData) return;
     
     puzzlePieces = [];
     const img = new Image();
+    const imagePath = 'asher_generated.png';
+    
     img.onload = () => {
+        // Show preview for 4 seconds if this is the first time
+        if (!state.previewShown) {
+            showImagePreview(img);
+            state.previewShown = true;
+        }
+        
         const pieceSize = 600 / CONFIG.gridSize;
         
         for (let row = 0; row < CONFIG.gridSize; row++) {
@@ -152,40 +230,223 @@ function generatePuzzlePieces() {
                 puzzlePieces.push(canvas.toDataURL('image/jpeg', 0.9));
             }
         }
+        
+        // Update the grid once pieces are generated
+        if (document.getElementById('puzzle-grid')) {
+            renderPuzzleGrid();
+        }
     };
-    img.src = state.photoData;
+    img.src = imagePath;
 }
 
-// Render functions
 function renderPuzzleGrid() {
     const grid = document.getElementById('puzzle-grid');
+    if (!grid) return;
+    
     grid.innerHTML = '';
     
     // Regenerate puzzle pieces if needed
     if (puzzlePieces.length === 0 && state.photoData) {
         generatePuzzlePieces();
+        return;
     }
     
     for (let i = 0; i < CONFIG.totalPieces; i++) {
-        const piece = document.createElement('div');
-        piece.className = 'puzzle-piece';
+        const slot = document.createElement('div');
+        slot.className = 'puzzle-slot';
+        slot.dataset.slotId = i + 1;
         
-        if (state.unlockedPieces.includes(i + 1)) {
-            piece.classList.add('unlocked');
-            if (puzzlePieces[i]) {
-                const img = document.createElement('img');
-                img.src = puzzlePieces[i];
-                piece.appendChild(img);
-            }
+        // Check if a piece is already placed here correctly
+        const placedPieceId = Object.keys(state.placedPieces || {}).find(
+            pieceId => state.placedPieces[pieceId] === (i + 1)
+        );
+        
+        if (placedPieceId) {
+            // Show the correctly placed piece
+            slot.classList.add('filled');
+            const img = document.createElement('img');
+            img.src = puzzlePieces[placedPieceId - 1];
+            slot.appendChild(img);
         } else {
-            piece.innerHTML = '<span class="lock-icon">🔒</span>';
+            // Show numbered drop zone
+            const slotNumber = document.createElement('div');
+            slotNumber.className = 'slot-number';
+            slotNumber.textContent = i + 1;
+            slot.appendChild(slotNumber);
+            
+            // Set up drag and drop events inline
+            slot.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                if (!slot.classList.contains('filled')) {
+                    slot.classList.add('drop-hover');
+                }
+            });
+            
+            slot.addEventListener('dragleave', () => {
+                slot.classList.remove('drop-hover');
+            });
+            
+            slot.addEventListener('drop', (e) => {
+                e.preventDefault();
+                slot.classList.remove('drop-hover');
+                
+                if (slot.classList.contains('filled')) return;
+                
+                const pieceId = parseInt(e.dataTransfer.getData('text/plain'));
+                const slotId = parseInt(slot.dataset.slotId);
+                
+                // Inline piece placement logic
+                if (!state.placedPieces) state.placedPieces = {};
+                
+                const isCorrect = pieceId === slotId;
+                if (isCorrect) {
+                    state.placedPieces[pieceId] = slotId;
+                    saveState(state);
+                    
+                    // Show success feedback
+                    showPlacementFeedback(true, 'Perfect! Piece ' + pieceId + ' fits perfectly! ✨');
+                    
+                    // Re-render to update display
+                    setTimeout(() => {
+                        renderPuzzleGrid();
+                        renderPiecesBank();
+                        
+                        // Check if puzzle is complete
+                        const correctPlacements = Object.keys(state.placedPieces).filter(
+                            pId => state.placedPieces[pId] === parseInt(pId)
+                        );
+                        if (correctPlacements.length === CONFIG.totalPieces) {
+                            setTimeout(() => {
+                                showScreen('final');
+                                showFinalReveal();
+                            }, 1500);
+                        }
+                    }, 1000);
+                } else {
+                    showPlacementFeedback(false, 'Hmm, piece ' + pieceId + ' doesn\'t belong in slot ' + slotId + '. Try another spot!');
+                }
+            });
         }
         
-        grid.appendChild(piece);
+        grid.appendChild(slot);
     }
     
     // Update progress
     document.getElementById('pieces-count').textContent = state.unlockedPieces.length;
+    document.getElementById('points-total').textContent = state.totalPoints || 0;
+    
+    // Add preview button if all pieces are unlocked
+    addPreviewButton();
+}
+
+function addPreviewButton() {
+    // Only show preview button if all pieces are unlocked
+    if (state.unlockedPieces.length < CONFIG.totalPieces) return;
+    
+    const puzzleContainer = document.querySelector('.puzzle-container');
+    let previewBtn = document.getElementById('preview-btn');
+    
+    if (!previewBtn) {
+        previewBtn = document.createElement('button');
+        previewBtn.id = 'preview-btn';
+        previewBtn.className = 'btn btn-secondary';
+        previewBtn.textContent = '👁️ Quick Preview';
+        previewBtn.style.marginTop = '10px';
+        previewBtn.addEventListener('click', showCompleteImagePreview);
+        puzzleContainer.appendChild(previewBtn);
+    }
+}
+
+function showCompleteImagePreview() {
+    const previewOverlay = document.createElement('div');
+    previewOverlay.style.cssText = 
+        'position: fixed; top: 0; left: 0; width: 100%; height: 100%; ' +
+        'background: rgba(0,0,0,0.9); display: flex; flex-direction: column; ' +
+        'justify-content: center; align-items: center; z-index: 10000; ' +
+        'color: white; text-align: center;';
+    
+    const previewImg = document.createElement('img');
+    previewImg.src = 'asher_generated.png';
+    previewImg.style.cssText = 
+        'max-width: 80%; max-height: 60%; border: 3px solid gold; ' +
+        'border-radius: 10px; box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);';
+    
+    const previewText = document.createElement('div');
+    previewText.innerHTML = 
+        '<h2 style="margin-bottom: 10px;">🎯 Complete Picture Preview</h2>' +
+        '<p style="margin-bottom: 5px;">This is what you\'re building!</p>' +
+        '<p style="font-size: 14px; opacity: 0.8;">Preview disappears in <span id="preview-countdown">3</span> seconds</p>';
+    
+    previewOverlay.appendChild(previewText);
+    previewOverlay.appendChild(previewImg);
+    document.body.appendChild(previewOverlay);
+    
+    // Countdown and fade out
+    let seconds = 3;
+    const countdown = setInterval(() => {
+        seconds--;
+        const countdownEl = document.getElementById('preview-countdown');
+        if (countdownEl) countdownEl.textContent = seconds;
+        
+        if (seconds <= 0) {
+            clearInterval(countdown);
+            previewOverlay.style.transition = 'opacity 1s';
+            previewOverlay.style.opacity = '0';
+            setTimeout(() => {
+                if (document.body.contains(previewOverlay)) {
+                    document.body.removeChild(previewOverlay);
+                }
+            }, 1000);
+        }
+    }, 1000);
+}
+
+function renderPiecesBank() {
+    const bank = document.getElementById('pieces-bank');
+    if (!bank) return;
+    
+    bank.innerHTML = '';
+    
+    // Show earned pieces that can be dragged
+    state.unlockedPieces.forEach(pieceNum => {
+        // Skip pieces that are already placed correctly
+        if (state.placedPieces && state.placedPieces[pieceNum] === pieceNum) {
+            return;
+        }
+        
+        const piece = document.createElement('div');
+        piece.className = 'draggable-piece';
+        piece.draggable = true;
+        piece.dataset.pieceId = pieceNum;
+        
+        if (puzzlePieces[pieceNum - 1]) {
+            const img = document.createElement('img');
+            img.src = puzzlePieces[pieceNum - 1];
+            piece.appendChild(img);
+            
+            // Add piece number for easy identification
+            const numberBadge = document.createElement('div');
+            numberBadge.className = 'piece-number';
+            numberBadge.textContent = pieceNum;
+            piece.appendChild(numberBadge);
+        }
+        
+        // Set up drag events inline
+        piece.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', piece.dataset.pieceId);
+            piece.classList.add('dragging');
+        });
+        
+        piece.addEventListener('dragend', () => {
+            piece.classList.remove('dragging');
+        });
+        
+        bank.appendChild(piece);
+    });
+    
+    if (state.unlockedPieces.length === 0) {
+        bank.innerHTML = '<p class="empty-bank">Complete missions to earn puzzle pieces!</p>';
+    }
 }
 
 function renderMissions() {
@@ -206,16 +467,15 @@ function renderMissions() {
         if (isCompleted) card.classList.add('completed');
         if (isLocked) card.classList.add('locked');
         
-        card.innerHTML = `
-            <div class="mission-icon">${mission.icon}</div>
-            <div class="mission-info">
-                <h4>${mission.name}</h4>
-                <p>${mission.description}</p>
-            </div>
-            <div class="mission-status">
-                ${isCompleted ? '✅' : isLocked ? '🔒' : '→'}
-            </div>
-        `;
+        card.innerHTML = 
+            '<div class="mission-icon">' + mission.icon + '</div>' +
+            '<div class="mission-info">' +
+                '<h4>' + mission.name + '</h4>' +
+                '<p>' + mission.description + '</p>' +
+            '</div>' +
+            '<div class="mission-status">' +
+                (isCompleted ? '✅' : isLocked ? '🔒' : '→') +
+            '</div>';
         
         if (!isCompleted && !isLocked) {
             card.addEventListener('click', () => startMission(mission));
@@ -271,12 +531,18 @@ function startMission(mission) {
     }, 300);
 }
 
-function onMissionComplete(success) {
+function onMissionComplete(success, score = 0) {
     if (success && currentMission) {
         // Mark mission as complete
         if (!state.completedMissions.includes(currentMission.id)) {
             state.completedMissions.push(currentMission.id);
         }
+        
+        // Add points
+        const points = Math.max(0, Math.min(100, Math.floor(score)));
+        state.totalPoints = (state.totalPoints || 0) + points;
+        state.missionScores = state.missionScores || {};
+        state.missionScores[currentMission.id] = points;
         
         // Unlock corresponding piece
         const pieceNum = currentMission.id;
@@ -287,20 +553,20 @@ function onMissionComplete(success) {
         saveState(state);
         
         // Show completion screen
-        showMissionComplete(pieceNum);
+        showMissionComplete(pieceNum, points);
     } else {
         // Failed - return to hub
         showScreen('hub');
     }
 }
 
-function showMissionComplete(pieceNum) {
+function showMissionComplete(pieceNum, points = 0) {
     document.getElementById('piece-number').textContent = pieceNum;
     
     // Show the revealed piece
     const pieceContainer = document.getElementById('revealed-piece');
     if (puzzlePieces[pieceNum - 1]) {
-        pieceContainer.innerHTML = `<img src="${puzzlePieces[pieceNum - 1]}" alt="Puzzle piece ${pieceNum}">`;
+        pieceContainer.innerHTML = '<img src="' + puzzlePieces[pieceNum - 1] + '" alt="Puzzle piece ' + pieceNum + '">';
     }
     
     // Show dad's message
@@ -308,11 +574,31 @@ function showMissionComplete(pieceNum) {
     document.getElementById('dad-message-text').textContent = message;
     
     showScreen('complete');
+    
+    // Add points display after screen is shown
+    setTimeout(() => {
+        const completeContent = document.querySelector('.complete-content');
+        const pieceReveal = completeContent.querySelector('.piece-reveal');
+        
+        // Check if points display already exists
+        if (!pieceReveal.querySelector('.points-earned')) {
+            const pointsDisplay = document.createElement('div');
+            pointsDisplay.className = 'points-earned';
+            pointsDisplay.innerHTML = '<p>⭐ Points Earned: ' + points + '/100</p>';
+            pointsDisplay.style.textAlign = 'center';
+            pointsDisplay.style.color = '#ffe66d';
+            pointsDisplay.style.fontSize = '1.2rem';
+            pointsDisplay.style.fontWeight = 'bold';
+            pointsDisplay.style.marginTop = '15px';
+            
+            pieceReveal.appendChild(pointsDisplay);
+        }
+    }, 100);
 }
 
 function showFinalReveal() {
     // Show full image
-    document.getElementById('final-image').src = state.photoData;
+    document.getElementById('final-image').src = 'asher_generated.png';
     document.getElementById('final-message-text').textContent = CONFIG.finalMessage;
     
     // Trigger confetti
@@ -325,6 +611,7 @@ function showFinalReveal() {
             prizeBtn.className = 'btn btn-primary btn-large';
             prizeBtn.textContent = '🎁 Open Prize Vault!';
             prizeBtn.onclick = () => {
+                document.getElementById('final-points').textContent = state.totalPoints || 0;
                 showScreen('prizes');
                 renderPrizes();
             };
@@ -344,52 +631,83 @@ function createConfetti() {
         piece.className = 'confetti-piece';
         piece.style.left = Math.random() * 100 + '%';
         piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-        piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
+        piece.style.animationDuration = (Math.random() * 3 + 2) + 's';
         piece.style.animationDelay = Math.random() * 2 + 's';
         confettiContainer.appendChild(piece);
     }
 }
 
 function renderPrizes() {
-    const list = document.getElementById('prizes-list');
-    list.innerHTML = '';
+    const prizesList = document.getElementById('prizes-list');
+    if (!prizesList) return;
     
-    CONFIG.prizes.forEach(prize => {
+    prizesList.innerHTML = '';
+    const totalPoints = state.totalPoints || 0;
+    
+    // Sort prizes by cost (cheapest first for better UX)
+    const sortedPrizes = [...CONFIG.prizes].sort((a, b) => a.cost - b.cost);
+    
+    sortedPrizes.forEach(prize => {
         const item = document.createElement('div');
         item.className = 'prize-item';
-        if (state.selectedPrizes.includes(prize.id)) {
-            item.classList.add('selected');
+        const canAfford = totalPoints >= prize.cost;
+        const isSelected = state.selectedPrizes.includes(prize.id);
+        
+        if (isSelected) item.classList.add('selected');
+        if (!canAfford) item.classList.add('unaffordable');
+        
+        item.innerHTML = 
+            '<span class="prize-icon">' + prize.icon + '</span>' +
+            '<div class="prize-info">' +
+                '<span class="prize-name">' + prize.name + '</span>' +
+                '<span class="prize-cost">' + prize.cost + ' points</span>' +
+            '</div>' +
+            '<span class="prize-check">' + (isSelected ? '✓' : canAfford ? '⭐' : '🔒') + '</span>';
+        
+        if (canAfford) {
+            item.addEventListener('click', () => togglePrize(prize.id, prize.cost));
         }
         
-        item.innerHTML = `
-            <span class="prize-icon">${prize.icon}</span>
-            <span class="prize-name">${prize.name}</span>
-            <span class="prize-check">${state.selectedPrizes.includes(prize.id) ? '✓' : ''}</span>
-        `;
-        
-        item.addEventListener('click', () => togglePrize(prize.id));
-        list.appendChild(item);
+        prizesList.appendChild(item);
     });
     
     updatePrizeCount();
 }
 
-function togglePrize(prizeId) {
+function togglePrize(prizeId, prizeCost) {
     const index = state.selectedPrizes.indexOf(prizeId);
+    const totalPoints = state.totalPoints || 0;
     
     if (index > -1) {
+        // Deselect
         state.selectedPrizes.splice(index, 1);
-    } else if (state.selectedPrizes.length < CONFIG.maxPrizePicks) {
-        state.selectedPrizes.push(prizeId);
+    } else if (state.selectedPrizes.length < CONFIG.maxPrizePicks && totalPoints >= prizeCost) {
+        // Check if we can afford it with current selection
+        const currentCost = calculateSelectedCost();
+        if (currentCost + prizeCost <= totalPoints) {
+            state.selectedPrizes.push(prizeId);
+        }
     }
     
     saveState(state);
     renderPrizes();
 }
 
+function calculateSelectedCost() {
+    return state.selectedPrizes.reduce((total, prizeId) => {
+        const prize = CONFIG.prizes.find(p => p.id === prizeId);
+        return total + (prize ? prize.cost : 0);
+    }, 0);
+}
+
 function updatePrizeCount() {
     const remaining = CONFIG.maxPrizePicks - state.selectedPrizes.length;
+    const totalPoints = state.totalPoints || 0;
+    const spentPoints = calculateSelectedCost();
+    const remainingPoints = totalPoints - spentPoints;
+    
     document.getElementById('picks-count').textContent = remaining;
+    document.getElementById('points-remaining').textContent = remainingPoints;
     document.getElementById('btn-confirm-prizes').disabled = state.selectedPrizes.length === 0;
 }
 
@@ -399,12 +717,262 @@ function confirmPrizes() {
         .map(p => p.name)
         .join(', ');
     
-    alert(`🎉 Awesome choices, ${CONFIG.childName}!\n\nYou picked: ${selectedNames}\n\nDad will make it happen! Merry Christmas! 🎄`);
+    alert('🎉 Awesome choices, ' + CONFIG.childName + '!\n\nYou picked: ' + selectedNames + '\n\nDad will make it happen! Merry Christmas! 🎄');
 }
 
 // Dev helper: Reset game
-window.resetGame = function() {
+function resetGame() {
     state = resetState();
     puzzlePieces = [];
+    localStorage.removeItem('pictureMissionState');
     location.reload();
-};
+}
+
+// Dev helper: Jump to final completion (for testing)
+function testFinal() {
+    // Mark all missions as completed
+    state.completedMissions = CONFIG.missions.map(m => m.id);
+    
+    // Unlock all pieces
+    state.unlockedPieces = Array.from({length: CONFIG.totalPieces}, (_, i) => i + 1);
+    
+    // Set reasonable points (assuming ~80 points per mission)
+    state.totalPoints = CONFIG.missions.length * 80;
+    
+    // Generate puzzle pieces if needed
+    if (puzzlePieces.length === 0) {
+        generatePuzzlePieces();
+    }
+    
+    // Save state and show final screen
+    saveState(state);
+    showScreen('final');
+    showFinalReveal();
+    
+    console.log('🎮 Jumped to final completion state for testing!');
+    console.log('- All missions completed:', state.completedMissions.length);
+    console.log('- All pieces unlocked:', state.unlockedPieces.length);
+    console.log('- Total points:', state.totalPoints);
+}
+
+// Dev helper: Test puzzle completion (all pieces earned, ready to place)
+function testPuzzle() {
+    // Mark all missions as completed
+    state.completedMissions = CONFIG.missions.map(m => m.id);
+    
+    // Unlock all pieces
+    state.unlockedPieces = Array.from({length: CONFIG.totalPieces}, (_, i) => i + 1);
+    
+    // Set reasonable points
+    state.totalPoints = CONFIG.missions.length * 80;
+    
+    // Clear any existing puzzle placements (pieces go back to bank)
+    state.placedPieces = {};
+    
+    // Save state first
+    saveState(state);
+    
+    // Generate puzzle pieces if needed, then render
+    if (puzzlePieces.length === 0) {
+        // Generate pieces and wait for completion
+        const img = new Image();
+        img.onload = () => {
+            const pieceSize = 600 / CONFIG.gridSize;
+            puzzlePieces = [];
+            
+            for (let row = 0; row < CONFIG.gridSize; row++) {
+                for (let col = 0; col < CONFIG.gridSize; col++) {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = pieceSize;
+                    canvas.height = pieceSize;
+                    const ctx = canvas.getContext('2d');
+                    
+                    ctx.drawImage(
+                        img,
+                        col * pieceSize, row * pieceSize, pieceSize, pieceSize,
+                        0, 0, pieceSize, pieceSize
+                    );
+                    
+                    puzzlePieces.push(canvas.toDataURL('image/jpeg', 0.9));
+                }
+            }
+            
+            // Now render everything with pieces ready
+            showScreen('hub');
+            renderPuzzleGrid();
+            renderPiecesBank();
+            renderMissions();
+            
+            console.log('🧩 Ready to test puzzle placement!');
+            console.log('- All pieces are in the earned pieces bank');
+            console.log('- Drag pieces to complete the puzzle');
+            console.log('- Use preview button to see target image');
+        };
+        img.src = 'asher_generated.png';
+    } else {
+        // Pieces already generated, just render
+        showScreen('hub');
+        renderPuzzleGrid();
+        renderPiecesBank();
+        renderMissions();
+        
+        console.log('🧩 Ready to test puzzle placement!');
+    }
+}
+
+// Make it available globally for console access too
+window.resetGame = resetGame;
+window.testFinal = testFinal;
+window.testPuzzle = testPuzzle;
+
+// Drag and Drop Functions for Interactive Puzzle
+function setupDragPiece(piece) {
+    piece.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', piece.dataset.pieceId);
+        piece.classList.add('dragging');
+    });
+    
+    piece.addEventListener('dragend', () => {
+        piece.classList.remove('dragging');
+    });
+    
+    // Touch support for mobile
+    let touchStartPos = null;
+    
+    piece.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        touchStartPos = {
+            x: e.touches[0].clientX,
+            y: e.touches[0].clientY
+        };
+        piece.classList.add('dragging');
+    });
+    
+    piece.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (!touchStartPos) return;
+        
+        const touch = e.touches[0];
+        piece.style.position = 'fixed';
+        piece.style.left = touch.clientX - 50 + 'px';
+        piece.style.top = touch.clientY - 50 + 'px';
+        piece.style.zIndex = '1000';
+        piece.style.transform = 'scale(1.1)';
+    });
+    
+    piece.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        if (!touchStartPos) return;
+        
+        const touch = e.changedTouches[0];
+        const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+        const slot = elementBelow?.closest('.puzzle-slot');
+        
+        if (slot && !slot.classList.contains('filled')) {
+            const pieceId = parseInt(piece.dataset.pieceId);
+            const slotId = parseInt(slot.dataset.slotId);
+            placePiece(pieceId, slotId);
+        }
+        
+        // Reset styles
+        piece.style.position = '';
+        piece.style.left = '';
+        piece.style.top = '';
+        piece.style.zIndex = '';
+        piece.style.transform = '';
+        piece.classList.remove('dragging');
+        touchStartPos = null;
+    });
+}
+
+function setupDropZone(slot) {
+    slot.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (!slot.classList.contains('filled')) {
+            slot.classList.add('drop-hover');
+        }
+    });
+    
+    slot.addEventListener('dragleave', () => {
+        slot.classList.remove('drop-hover');
+    });
+    
+    slot.addEventListener('drop', (e) => {
+        e.preventDefault();
+        slot.classList.remove('drop-hover');
+        
+        if (slot.classList.contains('filled')) return;
+        
+        const pieceId = parseInt(e.dataTransfer.getData('text/plain'));
+        const slotId = parseInt(slot.dataset.slotId);
+        
+        placePiece(pieceId, slotId);
+    });
+}
+
+function placePiece(pieceId, slotId) {
+    // Initialize placedPieces if needed
+    if (!state.placedPieces) state.placedPieces = {};
+    
+    // Check if it's the correct piece for this slot
+    const isCorrect = pieceId === slotId;
+    
+    if (isCorrect) {
+        // Correct placement!
+        state.placedPieces[pieceId] = slotId;
+        saveState(state);
+        
+        // Show success feedback
+        showPlacementFeedback(true, 'Perfect! Piece ' + pieceId + ' fits perfectly! ✨');
+        
+        // Re-render to update the display
+        setTimeout(() => {
+            renderPuzzleGrid();
+            renderPiecesBank();
+        }, 1000);
+    } else {
+        // Wrong placement
+        showPlacementFeedback(false, 'Hmm, piece ' + pieceId + ' doesn\'t belong in slot ' + slotId + '. Try another spot!');
+    }
+}
+
+function showPlacementFeedback(success, message) {
+    // Remove any existing feedback
+    const existingFeedback = document.querySelector('.placement-feedback');
+    if (existingFeedback) existingFeedback.remove();
+    
+    const feedback = document.createElement('div');
+    feedback.className = 'placement-feedback';
+    feedback.style.cssText = 
+        'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); ' +
+        'background: ' + (success ? '#51cf66' : '#ff6b6b') + '; color: white; padding: 20px; ' +
+        'border-radius: 12px; font-size: 1.1rem; font-weight: bold; text-align: center; ' +
+        'z-index: 2000; box-shadow: 0 10px 30px rgba(0,0,0,0.3); animation: fadeIn 0.3s ease; ' +
+        'max-width: 300px;';
+    feedback.innerHTML = 
+        '<div style="font-size: 2rem; margin-bottom: 10px;">' +
+        (success ? '🎉' : '🤔') +
+        '</div><div>' + message + '</div>';
+    
+    document.body.appendChild(feedback);
+    
+    setTimeout(() => {
+        feedback.style.animation = 'fadeOut 0.3s ease';
+        setTimeout(() => feedback.remove(), 300);
+    }, success ? 2000 : 3000);
+}
+
+function checkPuzzleComplete() {
+    if (!state.placedPieces) return;
+    
+    const correctPlacements = Object.keys(state.placedPieces).filter(
+        pieceId => state.placedPieces[pieceId] === parseInt(pieceId)
+    );
+    
+    if (correctPlacements.length === CONFIG.totalPieces) {
+        setTimeout(() => {
+            showScreen('final');
+            showFinalReveal();
+        }, 1500);
+    }
+}

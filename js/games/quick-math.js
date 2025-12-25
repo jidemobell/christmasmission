@@ -166,6 +166,11 @@ class QuickMathGame {
         
         const success = this.correct >= Math.ceil(this.problems * 0.75); // Need 75% correct
         
+        // Calculate score: points per correct answer, bonus for 100%
+        const baseScore = Math.floor((this.correct / this.problems) * 100);
+        const perfectBonus = this.correct === this.problems ? 10 : 0;
+        const score = success ? Math.min(100, baseScore + perfectBonus) : 0;
+        
         this.gameArea.innerHTML = `
             <div style="text-align: center;">
                 <div style="font-size: 4rem; margin-bottom: 20px;">
@@ -173,6 +178,7 @@ class QuickMathGame {
                 </div>
                 <h3>${success ? 'Math Wizard!' : 'Keep Practicing!'}</h3>
                 <p>You got ${this.correct} out of ${this.problems} correct!</p>
+                ${success ? `<p class="score-display">Score: ${score}/100 points!</p>` : ''}
                 <p>${success ? 
                     'Excellent math skills!' : 
                     `You need at least ${Math.ceil(this.problems * 0.75)} correct to pass.`
@@ -185,7 +191,7 @@ class QuickMathGame {
         
         document.getElementById('game-result-btn').addEventListener('click', () => {
             if (success) {
-                this.onComplete(true);
+                this.onComplete(true, score);
             } else {
                 // Restart
                 this.init();

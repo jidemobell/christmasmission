@@ -12,35 +12,35 @@ const CONFIG = {
     // Messages for each piece unlock (customize these!)
     messages: [
         // Piece 1
-        "You started! That's my boy. I've been watching you grow from afar, and you never stop amazing me. Let's see what you've got! 💪",
+        "You started! That's my boy. This first piece shows the top of something special... Let's see what you've got! 💪",
         
         // Piece 2
-        "Two down! You're getting warmed up now. Did you know you have the same determination I had at your age? Keep going, champ!",
+        "Two down! You're getting warmed up now. I can see part of a festive background taking shape. Keep going, champ!",
         
         // Piece 3
-        "Nice work! Every time I hear about what you're up to, it makes me smile. You're doing great!",
+        "Nice work! The top row is coming together - I think I can see some Christmas magic happening!",
         
         // Piece 4
-        "Almost halfway there! I want you to know - even when we're not together, I think about you every single day.",
+        "Almost halfway there! The left side is looking great. I want you to know - even when we're not together, I think about you every single day.",
         
         // Piece 5
-        "HALFWAY! 🎉 You know what I love about you? You don't give up. I've seen that in you since you were tiny. That's special.",
+        "HALFWAY! 🎉 The center piece - and there's your amazing smile starting to show! You know what I love about you? You don't give up.",
         
         // Piece 6
-        "You're crushing it! The picture is starting to take shape. Can you guess what it is yet?",
+        "You're crushing it! The right side is filling in. Can you see your face coming together? You're looking so grown up!",
         
         // Piece 7
-        "Three more to go! I'm so proud of the young man you're becoming. You've got skills!",
+        "Three more to go! The bottom left is revealing more Christmas spirit. I'm so proud of the young man you're becoming.",
         
         // Piece 8
-        "Almost there... Just one more mission after this. You've earned every single piece.",
+        "Almost there... Just one more piece! Your whole face is almost visible now - still that same wonderful kid I love.",
         
         // Piece 9 (Final)
-        "YOU DID IT! This picture is us - a reminder that distance doesn't change what we are. I love you more than any game could ever show. Merry Christmas, Asher! 🎄"
+        "YOU DID IT! There you are in all your Christmas glory! This AI made you look extra festive. I love you more than any game could ever show. Merry Christmas, Asher! 🎄"
     ],
     
     // Final message shown after all pieces revealed
-    finalMessage: "Asher, completing this mission proves what I already knew - you're amazing. I may not be there every day, but you're in my heart always. This Christmas and every day, know that your Dad loves you and is cheering for you. Now go claim your prizes! 🎁",
+    finalMessage: "Asher, completing this mission proves what I already knew - you're amazing. This Christmas and every day, know that your Dad loves you and is cheering for you. Now go claim your prizes! 🎁",
     
     // Mission definitions
     missions: [
@@ -109,18 +109,19 @@ const CONFIG = {
         }
     ],
     
-    // Prize list (optional - customize with Asher's wish list)
+    // Prize list - Asher's actual wish list with point costs
     prizes: [
-        { id: 1, name: "Nintendo Game", icon: "🎮" },
-        { id: 2, name: "LEGO Set", icon: "🧱" },
-        { id: 3, name: "Action Figure", icon: "🦸" },
-        { id: 4, name: "Art Supplies", icon: "🎨" },
-        { id: 5, name: "Book", icon: "📚" },
-        { id: 6, name: "Sports Equipment", icon: "⚽" }
+        { id: 1, name: "Electric Scooter", icon: "🛴", cost: 700 }, // Need almost perfect scores
+        { id: 2, name: "Bike", icon: "🚴", cost: 650 }, // Need very high scores  
+        { id: 3, name: "Thames & Kosmos Gumball Machine Maker", icon: "🍬", cost: 400 },
+        { id: 4, name: "Shape Shifting Shashibo Box", icon: "📦", cost: 300 },
+        { id: 5, name: "Circuits", icon: "⚡", cost: 350 },
+        { id: 6, name: "Magic 8 Ball", icon: "🎱", cost: 250 },
+        { id: 7, name: "Uno Show Em No Mercy", icon: "🃏", cost: 150 }
     ],
     
     // How many prizes can be picked
-    maxPrizePicks: 3,
+    maxPrizePicks: 2,
     
     // Enable prize vault feature
     enablePrizes: true
@@ -132,8 +133,11 @@ const defaultState = {
     completedMissions: [],
     unlockedPieces: [],
     selectedPrizes: [],
+    placedPieces: {}, // Track which pieces are correctly placed
     gameStarted: false,
-    setupComplete: false
+    setupComplete: false,
+    totalPoints: 0,
+    missionScores: {} // Store individual mission scores
 };
 
 function loadState() {

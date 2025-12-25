@@ -29,6 +29,9 @@
                 <button id="btn-start" class="btn btn-primary btn-large">
                     Start Your Mission! 🚀
                 </button>
+                <button id="btn-reset" class="btn btn-secondary" style="margin-top: 10px;">
+                    🔄 Reset Game
+                </button>
                 <p class="welcome-note">From Dad, with love ❤️</p>
             </div>
         </div>
@@ -57,6 +60,7 @@
             <div class="hub-header">
                 <h2>🎯 Mission Hub</h2>
                 <p class="progress-text">Pieces Unlocked: <span id="pieces-count">0</span>/9</p>
+                <p class="progress-text">Total Points: <span id="points-total">0</span></p>
             </div>
             
             <!-- Puzzle Grid -->
@@ -64,7 +68,15 @@
                 <div id="puzzle-grid" class="puzzle-grid">
                     <!-- 9 pieces will be generated here -->
                 </div>
-                <img id="puzzle-image" class="puzzle-image" hidden>
+            </div>
+            
+            <!-- Earned Pieces Bank -->
+            <div class="pieces-bank">
+                <h3>🎁 Your Earned Pieces</h3>
+                <div id="pieces-bank" class="pieces-bank-grid">
+                    <!-- Earned pieces appear here for dragging -->
+                </div>
+                <p class="bank-hint">Drag pieces to the puzzle above!</p>
             </div>
 
             <!-- Mission Cards -->
@@ -127,11 +139,17 @@
         <div id="screen-prizes" class="screen">
             <div class="prizes-content">
                 <h2>🎁 Prize Vault Unlocked!</h2>
-                <p>You've earned the right to pick your prizes!</p>
+                <div class="prize-summary">
+                    <p>⭐ Total Points Earned: <span id="final-points">0</span></p>
+                    <p>🛍️ You can pick any <strong>2 prizes</strong> you can afford!</p>
+                </div>
                 <div id="prizes-list" class="prizes-list">
                     <!-- Prize items will be generated -->
                 </div>
-                <p class="picks-remaining">Picks remaining: <span id="picks-count">0</span></p>
+                <div class="prize-footer">
+                    <p class="points-spent">Points to spend: <span id="points-remaining">0</span></p>
+                    <p class="picks-remaining">Picks remaining: <span id="picks-count">0</span></p>
+                </div>
                 <button id="btn-confirm-prizes" class="btn btn-primary" disabled>
                     Confirm My Picks! 🎉
                 </button>

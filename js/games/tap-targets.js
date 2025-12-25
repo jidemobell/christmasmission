@@ -124,6 +124,10 @@ class TapTargetsGame {
         
         const success = this.tapped >= this.targetCount;
         
+        // Calculate score: 100% for perfect, lose 10 points per miss, minimum 0
+        const accuracy = this.tapped / this.targetCount;
+        const score = success ? Math.max(0, 100 - (this.missed * 10)) : 0;
+        
         // Show result
         this.gameArea.innerHTML = `
             <div style="text-align: center;">
@@ -132,6 +136,8 @@ class TapTargetsGame {
                 </div>
                 <h3>${success ? 'Mission Complete!' : 'Try Again!'}</h3>
                 <p>You hit ${this.tapped} out of ${this.targetCount} targets!</p>
+                <p>Missed: ${this.missed}</p>
+                ${success ? `<p class="score-display">Score: ${score}/100 points!</p>` : ''}
                 ${!success ? '<p>You need to hit all targets to complete the mission.</p>' : ''}
                 <button id="game-result-btn" class="btn btn-primary" style="margin-top: 20px;">
                     ${success ? 'Continue →' : 'Try Again'}
@@ -141,7 +147,7 @@ class TapTargetsGame {
         
         document.getElementById('game-result-btn').addEventListener('click', () => {
             if (success) {
-                this.onComplete(true);
+                this.onComplete(true, score);
             } else {
                 // Restart the game
                 this.tapped = 0;

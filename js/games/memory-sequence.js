@@ -112,6 +112,9 @@ class MemorySequenceGame {
     endGame(success) {
         this.isActive = false;
         
+        // Calculate score: 20 points per round completed
+        const score = success ? 100 : Math.max(0, (this.round - 1) * 20);
+        
         this.gameArea.innerHTML = `
             <div style="text-align: center;">
                 <div style="font-size: 4rem; margin-bottom: 20px;">
@@ -122,6 +125,7 @@ class MemorySequenceGame {
                     `Amazing! You completed all ${this.maxRounds} rounds!` : 
                     `You made it to round ${this.round - 1}. Try again!`
                 }</p>
+                ${success || this.round > 1 ? `<p class="score-display">Score: ${score}/100 points!</p>` : ''}
                 <button id="game-result-btn" class="btn btn-primary" style="margin-top: 20px;">
                     ${success ? 'Continue →' : 'Try Again'}
                 </button>
@@ -130,7 +134,7 @@ class MemorySequenceGame {
         
         document.getElementById('game-result-btn').addEventListener('click', () => {
             if (success) {
-                this.onComplete(true);
+                this.onComplete(true, score);
             } else {
                 // Restart
                 this.sequence = [];

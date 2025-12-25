@@ -236,6 +236,12 @@ html, body {
     color: var(--text-muted);
 }
 
+.points-display {
+    color: var(--accent);
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
 /* Puzzle Grid */
 .puzzle-container {
     width: 100%;
@@ -254,31 +260,179 @@ html, body {
     padding: 4px;
 }
 
-.puzzle-piece {
+.puzzle-slot {
     background: rgba(0, 0, 0, 0.4);
+    border: 2px dashed rgba(255, 255, 255, 0.3);
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     color: var(--text-muted);
     position: relative;
     overflow: hidden;
+    transition: all 0.3s ease;
 }
 
-.puzzle-piece.unlocked {
+.puzzle-slot.drop-hover {
+    border-color: var(--accent);
+    background: rgba(255, 230, 109, 0.2);
+    transform: scale(1.05);
+}
+
+.puzzle-slot.filled {
     background: none;
+    border: 2px solid var(--success);
 }
 
-.puzzle-piece img {
+.puzzle-slot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.slot-number {
+    position: absolute;
+    font-size: 1.5rem;
+    font-weight: bold;
+    opacity: 0.5;
+}
+
+/* Pieces Bank */
+.pieces-bank {
+    margin-top: 30px;
+    text-align: center;
+}
+
+.pieces-bank h3 {
+    color: var(--secondary);
+    margin-bottom: 15px;
+}
+
+.pieces-bank-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    min-height: 80px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 10px;
+}
+
+.puzzle-piece-draggable {
+    width: 70px;
+    height: 70px;
+    position: relative;
+    cursor: grab;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid transparent;
+}
+
+.puzzle-piece-draggable:hover {
+    transform: scale(1.1);
+    border-color: var(--accent);
+}
+
+.puzzle-piece-draggable.dragging {
+    transform: scale(1.2) rotate(5deg);
+    cursor: grabbing;
+    z-index: 1000;
+    opacity: 0.8;
+}
+
+.puzzle-piece-draggable img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+}
+
+.piece-label {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 1px 4px;
+    border-radius: 3px;
+    pointer-events: none;
+}
+
+.bank-hint {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
+/* Additional draggable piece styles */
+.draggable-piece {
+    width: 70px;
+    height: 70px;
+    position: relative;
+    cursor: grab;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid transparent;
+}
+
+.draggable-piece:hover {
+    transform: scale(1.1);
+    border-color: var(--accent);
+}
+
+.draggable-piece.dragging {
+    transform: scale(1.2) rotate(5deg);
+    cursor: grabbing;
+    z-index: 1000;
+    opacity: 0.8;
+}
+
+.draggable-piece img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.puzzle-piece .lock-icon {
+.piece-number {
     position: absolute;
-    font-size: 1.2rem;
+    top: 2px;
+    right: 2px;
+    background: var(--accent);
+    color: var(--dark);
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.empty-bank {
+    color: var(--text-muted);
+    font-style: italic;
+    padding: 20px;
+}
+
+/* Placement Feedback */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    to { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
 }
 
 /* Missions List */
@@ -769,6 +923,15 @@ html, body {
     padding-top: 30px;
 }
 
+.prize-summary {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.prize-summary p {
+    margin-bottom: 8px;
+}
+
 .prizes-list {
     width: 100%;
     display: flex;
@@ -791,7 +954,7 @@ html, body {
     transition: all 0.2s ease;
 }
 
-.prize-item:hover {
+.prize-item:hover:not(.unaffordable) {
     border-color: var(--accent);
 }
 
@@ -800,12 +963,31 @@ html, body {
     background: rgba(81, 207, 102, 0.2);
 }
 
+.prize-item.unaffordable {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
 .prize-icon {
     font-size: 2rem;
 }
 
-.prize-name {
+.prize-info {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.prize-name {
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+.prize-cost {
+    font-size: 0.8rem;
+    color: var(--accent);
+    font-weight: bold;
 }
 
 .prize-check {
@@ -816,6 +998,7 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 1rem;
 }
 
 .prize-item.selected .prize-check {
@@ -823,8 +1006,22 @@ html, body {
     border-color: var(--success);
 }
 
-.picks-remaining {
+.prize-footer {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.prize-footer p {
+    margin-bottom: 5px;
     color: var(--accent);
+    font-size: 1rem;
+}
+
+.points-spent {
+    font-weight: bold;
+}
+
+.picks-remaining {
     font-size: 1.1rem;
     margin-bottom: 15px;
 }
