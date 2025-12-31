@@ -36,23 +36,13 @@ function setupEventListeners() {
     if (startBtn) {
         startBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            
-            // Reset the game state for a fresh start
-            state = resetState();
-            state.photoData = 'asher_generated.png';
-            state.setupComplete = true;
-            saveState(state);
-            
-            // Generate puzzle pieces first (this will show the preview)
-            generatePuzzlePieces();
-            
-            // Show hub after a brief delay to ensure puzzle generation completes
-            setTimeout(() => {
-                showScreen('hub');
-                renderPuzzleGrid();
-                renderMissions();
-            }, 100);
+            startNewGame();
         });
+    }
+    
+    // Add resume button if enabled
+    if (CONFIG.resumeOptions && CONFIG.resumeOptions.enabled && CONFIG.resumeOptions.resumeToMission > 0) {
+        addResumeButton();
     }
     
     // Reset button
@@ -61,6 +51,82 @@ function setupEventListeners() {
             resetGame();
         }
     });
+}
+
+function startNewGame() {
+    // Reset the game state for a fresh start
+    state = resetState();
+    state.photoData = 'asher_generated.png';
+    state.setupComplete = true;
+    saveState(state);
+    
+    // Generate puzzle pieces first (this will show the preview)
+    generatePuzzlePieces();
+    
+    // Show hub after a brief delay to ensure puzzle generation completes
+    setTimeout(() => {
+        showScreen('hub');
+        renderPuzzleGrid();
+        renderMissions();
+    }, 100);
+}
+
+function resumeProgress() {
+    const resumeTo = CONFIG.resumeOptions.resumeToMission;
+    
+    // Reset the game state
+    state = resetState();
+    state.photoData = 'asher_generated.png';
+    state.setupComplete = true;
+    
+    // Mark previous missions as completed with good scores
+    for (let i = 1; i < resumeTo; i++) {
+        state.completedMissions.push(i);
+        state.missionScores[i] = 85; // Give good scores for completed missions
+        state.unlockedPieces.push(i);
+        state.totalPoints += 85;
+    }
+    
+    saveState(state);
+    
+    // Generate puzzle pieces
+    generatePuzzlePieces();
+    
+    // Show hub with progress restored
+    setTimeout(() => {
+        showScreen('hub');
+        renderPuzzleGrid();
+        renderMissions();
+        
+        // Show a welcome back message
+        setTimeout(() => {
+            alert(`Welcome back, ${CONFIG.childName}! Your progress has been restored. You can continue from the Math Fun mission! 🎯`);
+        }, 500);
+    }, 100);
+}
+
+function addResumeButton() {
+    const welcomeScreen = document.getElementById('screen-welcome');
+    const startBtn = document.getElementById('btn-start');
+    
+    // Create resume button
+    const resumeBtn = document.createElement('button');
+    resumeBtn.id = 'btn-resume';
+    resumeBtn.className = 'btn btn-secondary';
+    resumeBtn.style.marginTop = '15px';
+    resumeBtn.innerHTML = `
+        <span style="font-size: 1.2rem; margin-right: 8px;">⚡</span>
+        ${CONFIG.resumeOptions.resumeMessage || 'Resume Progress'}
+    `;
+    
+    // Add click handler
+    resumeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        resumeProgress();
+    });
+    
+    // Insert after start button
+    startBtn.parentNode.insertBefore(resumeBtn, startBtn.nextSibling);
     
     // Setup screen
     const uploadArea = document.getElementById('upload-area');

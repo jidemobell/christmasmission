@@ -126,6 +126,14 @@ const CONFIG = {
     // Enable prize vault feature
     enablePrizes: true,
     
+    // Progress options
+    resumeOptions: {
+        enabled: true,
+        // Quick resume to specific mission (set to 0 to disable)
+        resumeToMission: 6, // Math Fun - mission 6
+        resumeMessage: "Continue your mission from Math Fun!"
+    },
+    
     // Math game settings
     mathSettings: {
         mode: "simple", // "simple", "original", or "autopass"
