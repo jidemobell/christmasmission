@@ -5,10 +5,35 @@ class QuickMathGame {
         this.onComplete = onComplete;
         this.gameArea = document.getElementById('game-area');
         this.isActive = false;
-        this.problems = 8;
+        
+        // Check config for math settings
+        const mathConfig = CONFIG.mathSettings || {};
+        this.mode = mathConfig.mode || "original";
+        
+        if (this.mode === "autopass") {
+            // Auto-pass mode - immediately complete with success
+            setTimeout(() => this.autoPass(), 1000);
+            return;
+        }
+        
+        if (this.mode === "simple") {
+            // Simple mode for younger kids
+            const simple = mathConfig.simple;
+            this.problems = simple.problems || 5;
+            this.timePerProblem = simple.timePerProblem || 8;
+            this.passThreshold = simple.passThreshold || 0.6;
+            this.maxAddition = simple.maxAddition || 10;
+            this.maxSubtraction = simple.maxSubtraction || 10;
+            this.includeMultiplication = simple.includeMultiplication || false;
+        } else {
+            // Original difficulty
+            this.problems = 8;
+            this.timePerProblem = 4;
+            this.passThreshold = 0.75;
+        }
+        
         this.currentProblem = 0;
         this.correct = 0;
-        this.timePerProblem = 4; // seconds
         this.timeLeft = this.timePerProblem;
         this.timer = null;
         this.currentAnswer = 0;
@@ -39,6 +64,26 @@ class QuickMathGame {
         
         // Start button
         this.optionsDiv.querySelector('button').addEventListener('click', () => this.startGame());
+    }
+    
+    autoPass() {
+        // Auto-pass mode - show success message and continue
+        this.gameArea.innerHTML = `
+            <div style="text-align: center;">
+                <div style="font-size: 4rem; margin-bottom: 20px;">⭐</div>
+                <h3>Math Expert!</h3>
+                <p>Great job, ${CONFIG.childName}! You've shown you're ready for this challenge.</p>
+                <p class="score-display">Score: 85/100 points!</p>
+                <p>Your dad believes in you and knows you can do math when you're ready!</p>
+                <button id="game-result-btn" class="btn btn-primary" style="margin-top: 20px;">
+                    Continue →
+                </button>
+            </div>
+        `;
+        
+        document.getElementById('game-result-btn').addEventListener('click', () => {
+            this.onComplete(true, 85); // Pass with good score
+        });
     }
     
     startGame() {
@@ -79,33 +124,68 @@ class QuickMathGame {
     }
     
     generateProblem() {
-        const operations = ['+', '-', '×'];
-        const operation = operations[Math.floor(Math.random() * operations.length)];
-        
-        let a, b, answer, question;
-        
-        switch (operation) {
-            case '+':
-                a = Math.floor(Math.random() * 20) + 1;
-                b = Math.floor(Math.random() * 20) + 1;
-                answer = a + b;
-                question = `${a} + ${b}`;
-                break;
-            case '-':
-                a = Math.floor(Math.random() * 20) + 10;
-                b = Math.floor(Math.random() * 10) + 1;
-                answer = a - b;
-                question = `${a} - ${b}`;
-                break;
-            case '×':
-                a = Math.floor(Math.random() * 9) + 2;
-                b = Math.floor(Math.random() * 9) + 2;
-                answer = a * b;
-                question = `${a} × ${b}`;
-                break;
+        if (this.mode === "simple") {
+            // Simple mode - easier math for 8-year-olds
+            const operations = this.includeMultiplication ? ['+', '-', '×'] : ['+', '-'];
+            const operation = operations[Math.floor(Math.random() * operations.length)];
+            
+            let a, b, answer, question;
+            
+            switch (operation) {
+                case '+':
+                    // Addition: 1-10 + 1-10, but keep sum under 15
+                    a = Math.floor(Math.random() * this.maxAddition) + 1;
+                    b = Math.floor(Math.random() * Math.min(this.maxAddition, 15 - a)) + 1;
+                    answer = a + b;
+                    question = `${a} + ${b}`;
+                    break;
+                case '-':
+                    // Subtraction: ensure positive result
+                    a = Math.floor(Math.random() * this.maxSubtraction) + 5; // 5-15
+                    b = Math.floor(Math.random() * (a - 1)) + 1; // 1 to (a-1)
+                    answer = a - b;
+                    question = `${a} - ${b}`;
+                    break;
+                case '×':
+                    // Simple multiplication: 1-5 × 1-5
+                    a = Math.floor(Math.random() * 5) + 1;
+                    b = Math.floor(Math.random() * 5) + 1;
+                    answer = a * b;
+                    question = `${a} × ${b}`;
+                    break;
+            }
+            
+            return { question, answer };
+        } else {
+            // Original difficulty
+            const operations = ['+', '-', '×'];
+            const operation = operations[Math.floor(Math.random() * operations.length)];
+            
+            let a, b, answer, question;
+            
+            switch (operation) {
+                case '+':
+                    a = Math.floor(Math.random() * 20) + 1;
+                    b = Math.floor(Math.random() * 20) + 1;
+                    answer = a + b;
+                    question = `${a} + ${b}`;
+                    break;
+                case '-':
+                    a = Math.floor(Math.random() * 20) + 10;
+                    b = Math.floor(Math.random() * 10) + 1;
+                    answer = a - b;
+                    question = `${a} - ${b}`;
+                    break;
+                case '×':
+                    a = Math.floor(Math.random() * 9) + 2;
+                    b = Math.floor(Math.random() * 9) + 2;
+                    answer = a * b;
+                    question = `${a} × ${b}`;
+                    break;
+            }
+            
+            return { question, answer };
         }
-        
-        return { question, answer };
     }
     
     generateOptions(correct) {
@@ -164,7 +244,7 @@ class QuickMathGame {
     endGame() {
         this.isActive = false;
         
-        const success = this.correct >= Math.ceil(this.problems * 0.75); // Need 75% correct
+        const success = this.correct >= Math.ceil(this.problems * (this.passThreshold || 0.75));
         
         // Calculate score: points per correct answer, bonus for 100%
         const baseScore = Math.floor((this.correct / this.problems) * 100);
@@ -181,7 +261,7 @@ class QuickMathGame {
                 ${success ? `<p class="score-display">Score: ${score}/100 points!</p>` : ''}
                 <p>${success ? 
                     'Excellent math skills!' : 
-                    `You need at least ${Math.ceil(this.problems * 0.75)} correct to pass.`
+                    `You need at least ${Math.ceil(this.problems * (this.passThreshold || 0.75))} correct to pass.`
                 }</p>
                 <button id="game-result-btn" class="btn btn-primary" style="margin-top: 20px;">
                     ${success ? 'Continue →' : 'Try Again'}

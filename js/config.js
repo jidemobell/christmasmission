@@ -81,8 +81,8 @@ const CONFIG = {
         },
         {
             id: 6,
-            name: "Math Blitz",
-            description: "Solve 8 math problems super fast!",
+            name: "Math Fun",
+            description: "Show off your math skills - made just right for you!",
             icon: "🔢",
             game: "quick-math"
         },
@@ -124,7 +124,21 @@ const CONFIG = {
     maxPrizePicks: 2,
     
     // Enable prize vault feature
-    enablePrizes: true
+    enablePrizes: true,
+    
+    // Math game settings
+    mathSettings: {
+        mode: "simple", // "simple", "original", or "autopass"
+        // Simple mode settings (for 8-year-olds)
+        simple: {
+            problems: 5,
+            timePerProblem: 8,
+            passThreshold: 0.6, // 60% to pass
+            maxAddition: 10,     // Numbers 1-10 for addition
+            maxSubtraction: 10,  // Subtraction from max 10
+            includeMultiplication: false // No multiplication
+        }
+    }
 };
 
 // Game state (persisted to localStorage)
