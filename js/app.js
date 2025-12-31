@@ -105,6 +105,34 @@ function resumeProgress() {
     }, 100);
 }
 
+function goDirectlyToPrizes() {
+    // Set up state as if all missions completed with max points
+    state = resetState();
+    state.photoData = 'asher_generated.png';
+    state.setupComplete = true;
+    
+    // Mark ALL missions as completed with perfect scores
+    for (let i = 1; i <= CONFIG.missions.length; i++) {
+        state.completedMissions.push(i);
+        state.missionScores[i] = 100; // Perfect scores
+        state.unlockedPieces.push(i);
+    }
+    
+    // Give maximum possible points (100 per mission)
+    state.totalPoints = CONFIG.missions.length * 100;
+    
+    saveState(state);
+    
+    // Go directly to prizes screen
+    showScreen('prizes');
+    renderPrizeVault();
+    
+    // Welcome message
+    setTimeout(() => {
+        alert(`Congratulations ${CONFIG.childName}! You've earned ${state.totalPoints} points! Time to claim your prizes! 🎁`);
+    }, 500);
+}
+
 function addResumeButton() {
     const welcomeScreen = document.getElementById('screen-welcome');
     const startBtn = document.getElementById('btn-start');
@@ -127,6 +155,25 @@ function addResumeButton() {
     
     // Insert after start button
     startBtn.parentNode.insertBefore(resumeBtn, startBtn.nextSibling);
+    
+    // Add prize claim button if enabled
+    if (CONFIG.resumeOptions.enablePrizeClaim) {
+        const prizeBtn = document.createElement('button');
+        prizeBtn.id = 'btn-claim-prizes';
+        prizeBtn.className = 'btn btn-success';
+        prizeBtn.style.marginTop = '15px';
+        prizeBtn.innerHTML = `
+            <span style="font-size: 1.2rem; margin-right: 8px;">🏆</span>
+            ${CONFIG.resumeOptions.prizeClaimMessage || 'Claim Prizes'}
+        `;
+        
+        prizeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            goDirectlyToPrizes();
+        });
+        
+        resumeBtn.parentNode.insertBefore(prizeBtn, resumeBtn.nextSibling);
+    }
     
     // Setup screen
     const uploadArea = document.getElementById('upload-area');

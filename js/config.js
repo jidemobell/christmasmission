@@ -131,7 +131,10 @@ const CONFIG = {
         enabled: true,
         // Quick resume to specific mission (set to 0 to disable)
         resumeToMission: 6, // Math Fun - mission 6
-        resumeMessage: "Continue your mission from Math Fun!"
+        resumeMessage: "Continue your mission from Math Fun!",
+        // Option to go directly to prizes (for completed players)
+        enablePrizeClaim: true,
+        prizeClaimMessage: "Claim Your Prizes! 🏆"
     },
     
     // Math game settings

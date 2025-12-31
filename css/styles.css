@@ -95,6 +95,16 @@ html, body {
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+.btn-success {
+    background: linear-gradient(135deg, var(--success) 0%, #45b049 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(81, 207, 102, 0.4);
+}
+
+.btn-success:hover:not(:disabled) {
+    box-shadow: 0 6px 20px rgba(81, 207, 102, 0.6);
+}
+
 .btn-large {
     padding: 16px 32px;
     font-size: 18px;
@@ -115,6 +125,7 @@ html, body {
     justify-content: center;
     text-align: center;
     position: relative;
+    gap: 12px;
 }
 
 .welcome-content h1 {
@@ -245,7 +256,7 @@ html, body {
 /* Puzzle Grid */
 .puzzle-container {
     width: 100%;
-    max-width: 300px;
+    max-width: min(300px, calc(100vw - 40px));
     margin: 0 auto 30px;
     position: relative;
 }
@@ -1040,7 +1051,16 @@ html, body {
 }
 
 /* Mobile optimizations */
-@media (max-width: 400px) {
+@media (max-width: 480px) {
+    #app {
+        max-width: 100%;
+        padding: 0 10px;
+    }
+    
+    .screen {
+        padding: 15px;
+    }
+    
     .welcome-content h1 {
         font-size: 1.6rem;
     }
@@ -1050,15 +1070,64 @@ html, body {
     }
     
     .puzzle-container {
-        max-width: 260px;
+        max-width: calc(100vw - 40px);
+        width: 100%;
+        margin: 0 auto 20px;
+    }
+    
+    .puzzle-grid {
+        gap: 2px;
+        padding: 2px;
+        border-radius: 8px;
+    }
+    
+    .puzzle-slot {
+        border-radius: 4px;
+        border-width: 1px;
     }
     
     .mission-card {
         padding: 12px;
+        margin-bottom: 10px;
     }
     
     .mission-icon {
         width: 40px;
         height: 40px;
+    }
+    
+    .btn {
+        padding: 14px 20px;
+        font-size: 16px;
+    }
+    
+    .hub-header {
+        margin-bottom: 15px;
+    }
+}
+
+@media (max-width: 400px) {
+    .puzzle-container {
+        max-width: calc(100vw - 30px);
+    }
+    
+    .pieces-bank {
+        margin-top: 15px;
+    }
+}
+
+@media (max-width: 350px) {
+    .puzzle-container {
+        max-width: calc(100vw - 20px);
+    }
+    
+    .puzzle-grid {
+        gap: 1px;
+        padding: 1px;
+    }
+    
+    .btn {
+        padding: 12px 16px;
+        font-size: 15px;
     }
 }
