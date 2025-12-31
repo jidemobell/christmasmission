@@ -125,7 +125,12 @@ function goDirectlyToPrizes() {
     
     // Go directly to prizes screen
     showScreen('prizes');
-    renderPrizeVault();
+    
+    // Update the final points display
+    document.getElementById('final-points').textContent = state.totalPoints;
+    
+    // Render the prizes
+    renderPrizes();
     
     // Welcome message
     setTimeout(() => {
